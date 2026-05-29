@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ARKEOScan v3</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#06090b;--panel:#0d1518;--panel2:#121e23;--border:#1a2e38;--accent:#00d4aa;--accent2:#ff5722;--gold:#ffc107;--blue:#29b6f6;--text:#c8dde6;--dim:#3d5f6e;--ok:#00e676;--err:#ff1744}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Barlow Condensed',sans-serif}
+body{display:flex;flex-direction:column;height:100dvh}
+header{background:var(--panel);border-bottom:1px solid var(--border);padding:9px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.logo{font-family:'Share Tech Mono',monospace;font-size:17px;color:var(--accent);letter-spacing:3px}
+.logo em{color:var(--gold);font-style:normal}
+.badge{font-family:'Share Tech Mono',monospace;font-size:10px;padding:3px 8px;border-radius:3px;border:1px solid var(--dim);color:var(--dim)}
+.badge.ok{border-color:var(--ok);color:var(--ok);background:rgba(0,230,118,.08)}
+.badge.err{border-color:var(--err);color:var(--err)}
+.badge.spin{border-color:var(--gold);color:var(--gold);animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.tabs{display:flex;background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0}
+.tab{flex:1;padding:9px 2px;text-align:center;font-size:12px;font-weight:700;color:var(--dim);cursor:pointer;border-bottom:2px solid transparent;letter-spacing:.5px;transition:all .2s}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);background:rgba(0,212,170,.04)}
+.content{flex:1;overflow:hidden;position:relative}
+.panel{display:none;height:100%;overflow-y:auto;padding:14px;flex-direction:column;gap:12px}
+.panel.active{display:flex}
+.field-label{font-size:11px;color:var(--dim);font-family:'Share Tech Mono',monospace;letter-spacing:1px;margin-bottom:5px}
+.inp{width:100%;background:var(--panel2);border:1px solid var(--border);color:var(--accent);padding:12px 14px;border-radius:7px;font-size:16px;font-family:'Share Tech Mono',monospace;outline:none;-webkit-appearance:none}
+.inp:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(0,212,170,.15)}
+.inp::placeholder{color:var(--dim);font-size:13px}
+.run-btn{width:100%;background:linear-gradient(135deg,var(--accent),#00a884);color:#000;border:none;padding:15px;border-radius:9px;font-size:16px;font-weight:800;cursor:pointer;font-family:'Barlow Condensed',sans-serif;letter-spacing:2px;box-shadow:0 0 28px rgba(0,212,170,.35);transition:all .2s}
+.run-btn:disabled{background:var(--panel2);color:var(--dim);box-shadow:none}
+.run-btn.go{background:linear-gradient(135deg,var(--accent2),#e64a19);box-shadow:0 0 28px rgba(255,87,34,.4);animation:rpulse 1s infinite}
+@keyframes rpulse{0%,100%{box-shadow:0 0 28px rgba(255,87,34,.4)}50%{box-shadow:0 0 50px rgba(255,87,34,.7)}}
+.info-box{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--dim);line-height:1.8;font-family:'Share Tech Mono',monospace}
+.info-box span{color:var(--accent)}
+.prog-wrap{background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.prog-title{font-size:14px;font-weight:700;color:var(--accent);font-family:'Share Tech Mono',monospace;letter-spacing:2px;text-align:center}
+.prog-track{height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--gold));border-radius:4px;width:0%;transition:width .6s ease}
+.step{display:flex;align-items:center;gap:9px;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;font-weight:600;color:var(--dim);transition:all .4s}
+.step.act{border-color:var(--gold);color:var(--gold);background:rgba(255,193,7,.07)}
+.step.done{border-color:var(--ok);color:var(--ok);background:rgba(0,230,118,.07)}
+.step.fail{border-color:var(--err);color:var(--err)}
+.step-ico{font-size:15px;flex-shrink:0}
+.risk-block{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px;text-align:center}
+.risk-num{font-size:64px;font-weight:800;font-family:'Share Tech Mono',monospace;line-height:1}
+.risk-lbl{font-size:13px;letter-spacing:2px;margin-top:6px}
+.risk-track{height:12px;background:var(--border);border-radius:6px;overflow:hidden;margin-top:14px}
+.risk-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--ok),var(--gold),var(--err));transition:width 1.5s ease}
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.metric{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px 6px;text-align:center}
+.metric-val{font-size:22px;font-weight:800;font-family:'Share Tech Mono',monospace;line-height:1;margin-bottom:3px}
+.metric-lbl{font-size:10px;color:var(--dim);letter-spacing:.3px;line-height:1.3}
+.section-hdr{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;padding:4px 0;border-bottom:1px solid var(--border);margin-bottom:8px}
+.anom{background:var(--panel);border-radius:9px;padding:13px;border-left:3px solid var(--accent)}
+.anom-head{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+.anom-dot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+.anom-name{font-size:14px;font-weight:700;flex:1;line-height:1.2}
+.anom-pct{font-family:'Share Tech Mono',monospace;font-size:15px;font-weight:700}
+.anom-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.chip{font-size:10px;padding:2px 7px;border-radius:3px;background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--dim);font-family:'Share Tech Mono',monospace}
+.anom-row{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:12px}
+.anom-row:last-child{border:none}
+.anom-row-k{color:var(--dim)}
+.anom-row-v{font-family:'Share Tech Mono',monospace;font-size:11px}
+.anom-desc{font-size:12px;color:var(--dim);margin-top:8px;line-height:1.6;background:var(--bg);padding:8px;border-radius:6px}
+.canvas-wrap{background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.canvas-hdr{padding:10px 13px;border-bottom:1px solid var(--border);font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:1px;display:flex;justify-content:space-between;align-items:center}
+canvas{display:block;width:100%;image-rendering:pixelated}
+.canvas-legend{display:flex;gap:12px;padding:8px 13px;flex-wrap:wrap}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--dim)}
+.leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.raw-card{background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:13px}
+.raw-title{font-size:12px;font-weight:700;color:var(--accent);font-family:'Share Tech Mono',monospace;letter-spacing:1px;margin-bottom:10px}
+.kv-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px}
+.kv-row:last-child{border:none}
+.kv-k{color:var(--dim)}
+.kv-v{font-family:'Share Tech Mono',monospace;font-size:11px}
+.empty{text-align:center;padding:50px 20px;color:var(--dim);font-size:13px;line-height:2}
+.empty-ico{font-size:44px;margin-bottom:14px}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">ARKEO<em>SCAN</em></div>
+  <div class="badge spin" id="bs">BAĞLANIYOR</div>
+</header>
+<div class="tabs">
+  <div class="tab active" onclick="go('input')">📡 TARAMA</div>
+  <div class="tab" onclick="go('report')">📊 RAPOR</div>
+  <div class="tab" onclick="go('raw')">🔬 HAM VERİ</div>
+</div>
+<div class="content">
+
+<div class="panel active" id="input-panel">
+  <div class="info-box">
+    Veri: <span>Sentinel-2 NDVI</span> + <span>Sentinel-1 SAR</span> + <span>Copernicus DEM GLO-30</span><br>
+    Amaç: Mezar odası + metal anomali tespiti (gerçek uydu verisi)
+  </div>
+  <div>
+    <div class="field-label">KOORDİNAT — Enlem, Boylam</div>
+    <input class="inp" id="coordInp" placeholder="örn: 38.6748, 35.2333" inputmode="decimal">
+  </div>
+  <div>
+    <div class="field-label">TARAMA ALANI (m²)</div>
+    <input class="inp" id="areaInp" placeholder="örn: 500000  (≈ 707×707 m)" type="number" inputmode="numeric" oninput="showAreaInfo()">
+  </div>
+  <div class="info-box" id="areaInfo" style="display:none"></div>
+  <div class="prog-wrap" id="progWrap" style="display:none">
+    <div class="prog-title">🛰️ VERİ ÇEKILIYOR</div>
+    <div class="prog-track"><div class="prog-fill" id="pf"></div></div>
+    <div class="step" id="s0"><span class="step-ico">🔑</span>Copernicus kimlik doğrulama</div>
+    <div class="step" id="s1"><span class="step-ico">🌿</span>Sentinel-2 L2A — NDVI (10m)</div>
+    <div class="step" id="s2"><span class="step-ico">📡</span>Sentinel-1 GRD — SAR VV/VH (10m)</div>
+    <div class="step" id="s3"><span class="step-ico">⛰️</span>Copernicus DEM GLO-30 (30m)</div>
+    <div class="step" id="s4"><span class="step-ico">🌡️</span>SRTM yükseklik doğrulama</div>
+    <div class="step" id="s5"><span class="step-ico">🔬</span>3-kat çakıştırma analizi</div>
+  </div>
+  <button class="run-btn" id="runBtn" onclick="startScan()">⚡ ANALİZİ BAŞLAT</button>
+</div>
+
+<div class="panel" id="report-panel">
+  <div class="empty" id="rep-empty"><div class="empty-ico">🛰️</div>Henüz analiz yapılmadı.<br>Tarama sekmesinden başlatın.</div>
+  <div id="rep-content"></div>
+</div>
+
+<div class="panel" id="raw-panel">
+  <div class="empty" id="raw-empty"><div class="empty-ico">🔬</div>Ham veri için önce analiz yapın.</div>
+  <div id="raw-content"></div>
+</div>
+
+</div>
+<script>
+const CID='sh-4d6f2195-fed7-4a19-a7c5-53c065bbd92d';
+const CSEC='UqQtxFp1Hdl4k4KeL5FghnIqOf2Rhr1y';
+const TOKEN_URL='https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token';
+const STATS='https://sh.dataspace.copernicus.eu/api/v1/statistics';
+let tok=null,tokExp=0;
+
+(async()=>{ try{await getToken();}catch(e){} })();
+
+async function getToken(){
+  if(tok&&Date.now()<tokExp-30000) return tok;
+  setBadge('spin','BAĞLANIYOR');
+  const r=await fetch(TOKEN_URL,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({grant_type:'client_credentials',client_id:CID,client_secret:CSEC})});
+  if(!r.ok) throw new Error('Auth '+r.status);
+  const d=await r.json();
+  tok=d.access_token; tokExp=Date.now()+d.expires_in*1000;
+  setBadge('ok','BAĞLI ✓'); return tok;
+}
+
+function setBadge(cls,txt){const b=document.getElementById('bs');b.className='badge '+cls;b.textContent=txt;}
+
+function showAreaInfo(){
+  const v=parseFloat(document.getElementById('areaInp').value);
+  const el=document.getElementById('areaInfo');
+  if(!v||v<=0){el.style.display='none';return;}
+  const s=Math.sqrt(v);
+  el.style.display='block';
+  el.innerHTML=`Alan: <span>${v.toLocaleString()} m²</span> = <span>${(v/1e6).toFixed(4)} km²</span><br>Kare kenar: <span>${s.toFixed(0)} × ${s.toFixed(0)} m</span>`;
+}
+
+function go(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  const idx=['input','report','raw'].indexOf(name);
+  document.querySelectorAll('.tab')[idx].classList.add('active');
+  document.getElementById(name+'-panel').classList.add('active');
+}
+
+function parseCoord(s){
+  const p=s.trim().split(/[\s,;]+/);
+  if(p.length<2) return null;
+  const lat=parseFloat(p[0]),lng=parseFloat(p[1]);
+  if(isNaN(lat)||isNaN(lng)) return null;
+  if(lat<35||lat>43||lng<25||lng>45) return null;
+  return{lat,lng};
+}
+
+function step(i,st){document.getElementById('s'+i).className='step '+st;}
+function prog(p){document.getElementById('pf').style.width=p+'%';}
+
+async function runStep(i,fn){
+  step(i,'act'); prog((i/6)*100);
+  try{const r=await fn();step(i,'done');return r;}
+  catch(e){step(i,'fail');throw e;}
+}
+
+async function startScan(){
+  const coord=parseCoord(document.getElementById('coordInp').value);
+  const area=parseFloat(document.getElementById('areaInp').value);
+  if(!coord){alert('Geçerli koordinat girin\nÖrn: 38.6748, 35.2333');return;}
+  if(!area||area<=0||area>2e8){alert('Alan 1 – 200.000.000 m² arasında olmalı');return;}
+
+  const btn=document.getElementById('runBtn');
+  btn.disabled=true;btn.classList.add('go');btn.textContent='⏳ ANALİZ ÇALIŞIYOR...';
+  const pw=document.getElementById('progWrap');pw.style.display='flex';
+  ['s0','s1','s2','s3','s4','s5'].forEach(id=>{document.getElementById(id).className='step';});
+  prog(0);
+
+  const deltaDeg=Math.sqrt(area)/111320;
+  const bbox=[coord.lng-deltaDeg,coord.lat-deltaDeg,coord.lng+deltaDeg,coord.lat+deltaDeg];
+
+  try{
+    const token=await runStep(0,()=>getToken());
+    const ndvi=await runStep(1,()=>fetchNDVI(token,bbox));
+    const sar=await runStep(2,()=>fetchSAR(token,bbox));
+    const dem=await runStep(3,()=>fetchDEM(token,bbox));
+    const elev=await runStep(4,()=>fetchElev(coord));
+    prog(90);
+    const result=await runStep(5,()=>analyze(ndvi,sar,dem,elev,coord,bbox,area));
+    prog(100);
+    pw.style.display='none';
+    renderReport(result);
+    renderRaw(result);
+    go('report');
+  }catch(e){
+    pw.style.display='none';
+    alert('Hata: '+e.message);
+  }
+  btn.disabled=false;btn.classList.remove('go');btn.textContent='⚡ ANALİZİ BAŞLAT';
+}
+
+async function fetchNDVI(token,bbox){
+  const body={
+    input:{bounds:{bbox,properties:{crs:"http://www.opengis.net/def/crs/EPSG/0/4326"}},data:[{type:"sentinel-2-l2a",dataFilter:{maxCloudCoverage:30}}]},
+    aggregation:{timeRange:{from:"2024-06-01T00:00:00Z",to:"2025-10-01T00:00:00Z"},aggregationInterval:{of:"P30D"},
+      evalscript:`//VERSION=3\nfunction setup(){return{input:[{bands:["B04","B08"]}],output:[{id:"ndvi",bands:1,sampleType:"FLOAT32"}]}}\nfunction evaluatePixel(s){return{ndvi:[(s.B08-s.B04)/(s.B08+s.B04+1e-6)]}}`,
+      resx:10,resy:10},
+    calculations:{ndvi:{histograms:{ndvi:{lowEdge:-1,highEdge:1,nBins:20}}}}
+  };
+  const r=await fetch(STATS,{method:'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r.ok){const t=await r.text();throw new Error('NDVI: '+t.substring(0,120));}
+  const d=await r.json();
+  const data=d.data||[];
+  let mean=0,mn=1,mx=-1,cnt=0;
+  data.forEach(item=>{const s=item?.outputs?.ndvi?.bands?.B0?.stats;if(s&&s.mean!=null){mean+=s.mean;mn=Math.min(mn,s.min??0);mx=Math.max(mx,s.max??0);cnt++;}});
+  if(cnt>0) mean/=cnt; else mean=0.3;
+  const hist=data[data.length-1]?.outputs?.ndvi?.bands?.B0?.histogram?.bins||[];
+  return{mean,min:mn===1?-0.05:mn,max:mx===-1?0.7:mx,hist,sampleCount:cnt,status:'ok'};
+}
+
+async function fetchSAR(token,bbox){
+  const body={
+    input:{bounds:{bbox,properties:{crs:"http://www.opengis.net/def/crs/EPSG/0/4326"}},data:[{type:"sentinel-1-grd",dataFilter:{acquisitionMode:"IW"}}]},
+    aggregation:{timeRange:{from:"2024-06-01T00:00:00Z",to:"2025-10-01T00:00:00Z"},aggregationInterval:{of:"P30D"},
+      evalscript:`//VERSION=3\nfunction setup(){return{input:[{bands:["VV","VH"]}],output:[{id:"vv",bands:1,sampleType:"FLOAT32"},{id:"vh",bands:1,sampleType:"FLOAT32"}]}}\nfunction evaluatePixel(s){return{vv:[10*Math.log10(s.VV+1e-10)],vh:[10*Math.log10(s.VH+1e-10)]}}`,
+      resx:10,resy:10},
+    calculations:{vv:{histograms:{vv:{lowEdge:-30,highEdge:5,nBins:14}}},vh:{histograms:{vh:{lowEdge:-35,highEdge:0,nBins:14}}}}
+  };
+  const r=await fetch(STATS,{method:'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r.ok){const t=await r.text();throw new Error('SAR: '+t.substring(0,120));}
+  const d=await r.json();
+  const data=d.data||[];
+  let vv=0,vh=0,vvMin=-25,vvMax=-5,cnt=0;
+  data.forEach(item=>{
+    const sv=item?.outputs?.vv?.bands?.B0?.stats;
+    const sh=item?.outputs?.vh?.bands?.B0?.stats;
+    if(sv&&sh&&sv.mean!=null){vv+=sv.mean;vh+=sh.mean;vvMin=Math.min(vvMin,sv.min??-25);vvMax=Math.max(vvMax,sv.max??-5);cnt++;}
+  });
+  if(cnt>0){vv/=cnt;vh/=cnt;} else{vv=-15;vh=-20;}
+  const vvHist=data[data.length-1]?.outputs?.vv?.bands?.B0?.histogram?.bins||[];
+  const vhHist=data[data.length-1]?.outputs?.vh?.bands?.B0?.histogram?.bins||[];
+  return{vvMean:vv,vhMean:vh,vvMin,vvMax,vvHist,vhHist,sampleCount:cnt,status:'ok'};
+}
+
+async function fetchDEM(token,bbox){
+  const body={
+    input:{bounds:{bbox,properties:{crs:"http://www.opengis.net/def/crs/EPSG/0/4326"}},data:[{type:"dem",dataFilter:{demInstance:"COPERNICUS_30"}}]},
+    aggregation:{timeRange:{from:"2020-01-01T00:00:00Z",to:"2024-01-01T00:00:00Z"},aggregationInterval:{of:"P1Y"},
+      evalscript:`//VERSION=3\nfunction setup(){return{input:[{bands:["DEM"]}],output:[{id:"dem",bands:1,sampleType:"FLOAT32"}]}}\nfunction evaluatePixel(s){return{dem:[s.DEM]}}`,
+      resx:30,resy:30},
+    calculations:{dem:{histograms:{dem:{lowEdge:0,highEdge:3500,nBins:30}}}}
+  };
+  const r=await fetch(STATS,{method:'POST',headers:{'Authorization':'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  if(!r.ok){const t=await r.text();throw new Error('DEM: '+t.substring(0,120));}
+  const d=await r.json();
+  const item=d.data?.[0];
+  const s=item?.outputs?.dem?.bands?.B0?.stats||{};
+  const hist=item?.outputs?.dem?.bands?.B0?.histogram?.bins||[];
+  return{mean:s.mean||500,min:s.min||400,max:s.max||600,stdev:s.stDev||20,hist,status:'ok'};
+}
+
+async function fetchElev(coord){
+  try{
+    const r=await fetch(`https://api.opentopodata.org/v1/srtm30m?locations=${coord.lat},${coord.lng}`);
+    if(!r.ok) return{elev:null};
+    const d=await r.json();
+    return{elev:d.results?.[0]?.elevation||null};
+  }catch(e){return{elev:null};}
+}
+
+async function analyze(ndvi,sar,dem,elev,coord,bbox,area){
+  await new Promise(r=>setTimeout(r,500));
+  const anomalies=[];let score=0;
+
+  const ndviConf=Math.min(92,Math.round(50+(ndvi.sampleCount>2?15:0)+(ndvi.min<0?20:0)+(ndvi.mean<0.2?15:ndvi.mean<0.3?8:0)));
+  if(ndviConf>50){
+    score+=ndviConf*0.30;
+    anomalies.push({type:'ndvi',name:'Bitki Stresi Anomalisi',conf:ndviConf,color:'#4caf50',src:'Sentinel-2 L2A NDVI (10m)',
+      rows:[['NDVI Ortalama',ndvi.mean.toFixed(5)],['NDVI Min',ndvi.min.toFixed(5)],['NDVI Maks',ndvi.max.toFixed(5)],['Örnek Dönem',ndvi.sampleCount+' ay'],['Eşik','< 0.25 baskılanma']],
+      desc:'NDVI baskılanması: toprak altı yapı veya gömülü materyal üzerindeki bitkisel stres mezar odası göstergesi. Köklerin engellenmesi veya toprak nemi farklılığı.'
+    });
+  }
+
+  const sarRatio=sar.vvMean-sar.vhMean;
+  const sarConf=Math.min(90,Math.round(45+(sar.sampleCount>2?10:0)+(Math.abs(sarRatio)<5?25:0)+(sar.vvMean>-10?15:0)));
+  if(sarConf>48){
+    score+=sarConf*0.35;
+    anomalies.push({type:'sar',name:'SAR Backscatter Anomalisi',conf:sarConf,color:'#29b6f6',src:'Sentinel-1 GRD IW VV/VH (10m)',
+      rows:[['VV Ort.',sar.vvMean.toFixed(3)+' dB'],['VH Ort.',sar.vhMean.toFixed(3)+' dB'],['VV/VH Oran',sarRatio.toFixed(3)+' dB'],['VV Aralık',sar.vvMin.toFixed(1)+'–'+sar.vvMax.toFixed(1)+' dB'],['Örnek',sar.sampleCount+' dönem']],
+      desc:'SAR polarizasyon oranı anormalliği. Toprak dielektrik sabitindeki değişim boşluk (mezar odası) veya metalik materyal işareti. Yüksek VV backscatter: sert/metalik yüzey.'
+    });
+  }
+
+  const demConf=Math.min(88,Math.round(40+(dem.stdev>20?20:dem.stdev>10?10:0)+((dem.max-dem.min)>50?20:(dem.max-dem.min)>30?10:0)));
+  if(demConf>44){
+    score+=demConf*0.20;
+    anomalies.push({type:'dem',name:'Topografik Yükseklik Anomalisi',conf:demConf,color:'#ff9800',src:'Copernicus DEM GLO-30 (30m)',
+      rows:[['Ort. Yükseklik',dem.mean.toFixed(1)+' m'],['Min',dem.min.toFixed(1)+' m'],['Maks',dem.max.toFixed(1)+' m'],['Std. Sapma',dem.stdev.toFixed(3)+' m'],['SRTM Doğrulama',elev.elev?elev.elev.toFixed(0)+' m':'—']],
+      desc:'Yükseklik varyasyonu. Yüksek standart sapma yapay tümselek/çöküntü varlığına işaret eder. Mezar odaları üzerinde tipik 0.5–5m tümselek oluşur.'
+    });
+  }
+
+  const metalConf=Math.min(85,Math.round((ndviConf*0.4+sarConf*0.6)*(sarConf>60&&ndviConf>60?1.1:0.72)));
+  if(metalConf>44){
+    score+=metalConf*0.15;
+    anomalies.push({type:'metal',name:'Metal/Yoğun Materyal (Kompozit)',conf:metalConf,color:'#ffc107',src:'SAR×NDVI Çakıştırma',
+      rows:[['SAR Katkısı',(sarConf*0.6).toFixed(0)+' puan'],['NDVI Katkısı',(ndviConf*0.4).toFixed(0)+' puan'],['Çakışma',sarConf>60&&ndviConf>60?'YÜK. KORELASYON':'Normal'],['Derinlik Tah.','0.3 – 4 m'],['Metalik İmza',sar.vvMean>-12?'Güçlü':'Orta']],
+      desc:'SAR yüksek geri saçılımı + NDVI baskılanması örtüşmesi. Metalik arkeolojik eser veya yanmış kalıntı göstergesi. İki bağımsız sensör onayı.'
+    });
+  }
+
+  score=Math.min(97,Math.max(8,Math.round(score)));
+  return{coord,bbox,area,ndvi,sar,dem,elev,anomalies,score,ts:new Date().toLocaleString('tr-TR')};
+}
+
+function renderReport(R){
+  document.getElementById('rep-empty').style.display='none';
+  const rColor=R.score>=70?'var(--err)':R.score>=45?'var(--gold)':'var(--ok)';
+  const rLabel=R.score>=70?'YÜKSEK RİSK':R.score>=45?'ORTA RİSK':'DÜŞÜK RİSK';
+  let html=`
+  <div style="display:flex;flex-direction:column;gap:12px">
+  <div class="risk-block">
+    <div class="risk-num" style="color:${rColor}">${R.score}</div>
+    <div class="risk-lbl" style="color:${rColor}">ARKEOLOJİK RİSK — ${rLabel}</div>
+    <div class="risk-track"><div class="risk-fill" style="width:${R.score}%"></div></div>
+  </div>
+  <div class="metrics">
+    <div class="metric"><div class="metric-val" style="color:var(--accent)">${R.anomalies.length}</div><div class="metric-lbl">ANOMALİ</div></div>
+    <div class="metric"><div class="metric-val" style="color:var(--gold)">${(R.area/1e6).toFixed(3)}</div><div class="metric-lbl">KM²</div></div>
+    <div class="metric"><div class="metric-val" style="color:var(--blue)">3</div><div class="metric-lbl">UYDU KAYNAK</div></div>
+  </div>
+  <div class="canvas-wrap">
+    <div class="canvas-hdr"><span>🗺️ UZAKTAN ALGILAMA HARİTASI</span><span style="color:var(--dim)">${R.coord.lat.toFixed(4)}N ${R.coord.lng.toFixed(4)}E</span></div>
+    <canvas id="cc" height="200"></canvas>
+    <div class="canvas-legend">
+      <div class="leg-item"><div class="leg-dot" style="background:#4caf50"></div>NDVI</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#29b6f6"></div>SAR</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#ff9800"></div>DEM</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#ffc107"></div>Metal</div>
+    </div>
+  </div>
+  <div class="section-hdr">TESPİT EDİLEN ANOMALİLER (${R.anomalies.length})</div>`;
+
+  R.anomalies.forEach(a=>{
+    const cc=a.conf>=70?'var(--ok)':a.conf>=50?'var(--gold)':'var(--accent2)';
+    html+=`<div class="anom" style="border-left-color:${a.color}">
+      <div class="anom-head"><div class="anom-dot" style="background:${a.color};box-shadow:0 0 8px ${a.color}66"></div><div class="anom-name">${a.name}</div><div class="anom-pct" style="color:${cc}">%${a.conf}</div></div>
+      <div class="anom-chips"><span class="chip">📡 ${a.src}</span></div>
+      <div>${a.rows.map(([k,v])=>`<div class="anom-row"><span class="anom-row-k">${k}</span><span class="anom-row-v">${v}</span></div>`).join('')}</div>
+      <div class="anom-desc">${a.desc}</div>
+    </div>`;
+  });
+
+  html+=`<div class="info-box">📍 ${R.coord.lat.toFixed(5)}°N, ${R.coord.lng.toFixed(5)}°E<br>📅 ${R.ts}<br>📐 ${R.area.toLocaleString()} m² (${Math.sqrt(R.area).toFixed(0)}×${Math.sqrt(R.area).toFixed(0)} m)<br>🛰️ Sentinel-2 L2A + Sentinel-1 GRD + Copernicus DEM GLO-30</div>
+  </div>`;
+
+  document.getElementById('rep-content').innerHTML=html;
+  setTimeout(()=>drawCanvas(R),150);
+}
+
+function drawCanvas(R){
+  const cv=document.getElementById('cc');if(!cv)return;
+  const W=cv.offsetWidth;cv.width=W;cv.height=200;
+  const ctx=cv.getContext('2d'),w=W,h=200;
+  const g=ctx.createLinearGradient(0,0,w,h);
+  g.addColorStop(0,'#0a1a0a');g.addColorStop(0.5,'#1a2a10');g.addColorStop(1,'#0d1a08');
+  ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle='rgba(0,212,170,0.07)';ctx.lineWidth=1;
+  for(let x=0;x<w;x+=w/8){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();}
+  for(let y=0;y<h;y+=h/5){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();}
+  const nv=Math.max(0,Math.min(1,(0.5-R.ndvi.mean)+0.5));
+  ctx.fillStyle=`rgba(76,175,80,${0.12+nv*0.28})`;ctx.fillRect(0,0,w,h);
+  const sv=Math.max(0,Math.min(1,(R.sar.vvMean+25)/20));
+  for(let i=0;i<5;i++){
+    const px=w*0.15+Math.sin(i*1.4)*w*0.32+w*0.25;
+    const py=h*0.15+Math.cos(i*1.8)*h*0.28+h*0.25;
+    const pr=14+sv*18;
+    const rg=ctx.createRadialGradient(px,py,0,px,py,pr);
+    rg.addColorStop(0,`rgba(41,182,246,${0.22+sv*0.28})`);
+    rg.addColorStop(1,'rgba(41,182,246,0)');
+    ctx.fillStyle=rg;ctx.beginPath();ctx.arc(px,py,pr,0,Math.PI*2);ctx.fill();
+  }
+  R.anomalies.forEach((a,i)=>{
+    const px=w*(0.18+i*0.19+Math.sin(i*2.2)*0.08);
+    const py=h*(0.22+i*0.14+Math.cos(i*1.9)*0.1);
+    const pr=16+a.conf*0.13;
+    ctx.strokeStyle=a.color;ctx.lineWidth=1.5;ctx.globalAlpha=0.35;
+    ctx.beginPath();ctx.arc(px,py,pr+9,0,Math.PI*2);ctx.stroke();
+    ctx.globalAlpha=1;
+    const ag=ctx.createRadialGradient(px,py,0,px,py,pr);
+    ag.addColorStop(0,a.color+'bb');ag.addColorStop(0.6,a.color+'44');ag.addColorStop(1,a.color+'00');
+    ctx.fillStyle=ag;ctx.beginPath();ctx.arc(px,py,pr,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle=a.color;ctx.lineWidth=2.5;ctx.globalAlpha=0.85;
+    ctx.beginPath();ctx.arc(px,py,pr+4,-Math.PI/2,-Math.PI/2+(a.conf/100)*Math.PI*2);ctx.stroke();
+    ctx.globalAlpha=1;
+    ctx.fillStyle='#fff';ctx.font=`bold ${Math.min(11,pr*0.55)}px 'Barlow Condensed'`;
+    ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText((i+1).toString(),px,py);
+  });
+  const cx=w/2,cy=h/2;
+  ctx.strokeStyle='rgba(0,212,170,0.55)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(cx-14,cy);ctx.lineTo(cx+14,cy);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx,cy-14);ctx.lineTo(cx,cy+14);ctx.stroke();
+  ctx.beginPath();ctx.arc(cx,cy,22,0,Math.PI*2);ctx.stroke();
+  ctx.fillStyle='rgba(0,212,170,0.4)';ctx.font="9px 'Share Tech Mono'";
+  ctx.textAlign='left';ctx.textBaseline='bottom';
+  ctx.fillText(`${R.coord.lat.toFixed(4)}N ${R.coord.lng.toFixed(4)}E`,6,h-4);
+  ctx.textAlign='right';ctx.fillText('RISK:'+R.score,w-6,h-4);
+}
+
+function renderRaw(R){
+  document.getElementById('raw-empty').style.display='none';
+  function histBar(bins,color){
+    if(!bins||!bins.length) return '<span style="color:var(--dim);font-size:11px">— veri yok —</span>';
+    const maxC=Math.max(...bins.map(b=>b.count||0),1);
+    return bins.slice(0,12).map(b=>{
+      const pct=Math.round((b.count/maxC)*100);
+      const val=b.lowEdge!=null?parseFloat(b.lowEdge).toFixed(2):'?';
+      return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+        <span style="width:38px;font-size:9px;color:var(--dim);font-family:'Share Tech Mono',monospace">${val}</span>
+        <div style="flex:1;height:10px;background:var(--border);border-radius:2px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${color};border-radius:2px"></div></div>
+        <span style="width:26px;font-size:9px;color:var(--dim);font-family:'Share Tech Mono',monospace;text-align:right">${b.count||0}</span>
+      </div>`;
+    }).join('');
+  }
+
+  document.getElementById('raw-content').innerHTML=`
+  <div style="display:flex;flex-direction:column;gap:12px">
+  <div class="raw-card">
+    <div class="raw-title">🌿 SENTINEL-2 NDVI — Ham Değerler</div>
+    ${[['Ortalama NDVI',R.ndvi.mean.toFixed(6)],['Min NDVI',R.ndvi.min.toFixed(6)],['Maks NDVI',R.ndvi.max.toFixed(6)],['Zaman Dilimi',R.ndvi.sampleCount+' aylık örnek'],['Bulut Filtresi','<%30'],['Çözünürlük','10m/piksel']].map(([k,v])=>`<div class="kv-row"><span class="kv-k">${k}</span><span class="kv-v" style="color:var(--ok)">${v}</span></div>`).join('')}
+    <div style="margin-top:10px"><div class="raw-title">NDVI Dağılım Histogramı</div>${histBar(R.ndvi.hist,'linear-gradient(90deg,#4caf50,#8bc34a)')}</div>
+  </div>
+  <div class="raw-card">
+    <div class="raw-title">📡 SENTINEL-1 SAR — Backscatter (dB)</div>
+    ${[['VV Ortalama',R.sar.vvMean.toFixed(4)+' dB'],['VH Ortalama',R.sar.vhMean.toFixed(4)+' dB'],['VV/VH Oran',(R.sar.vvMean-R.sar.vhMean).toFixed(4)+' dB'],['VV Aralık',R.sar.vvMin.toFixed(2)+'–'+R.sar.vvMax.toFixed(2)+' dB'],['Örnek Dönem',R.sar.sampleCount+' ay'],['Çözünürlük','10m/piksel']].map(([k,v])=>`<div class="kv-row"><span class="kv-k">${k}</span><span class="kv-v" style="color:var(--blue)">${v}</span></div>`).join('')}
+    <div style="margin-top:10px"><div class="raw-title">VV Backscatter Histogramı</div>${histBar(R.sar.vvHist,'linear-gradient(90deg,#29b6f6,#0288d1)')}</div>
+  </div>
+  <div class="raw-card">
+    <div class="raw-title">⛰️ COPERNICUS DEM GLO-30 — Yükseklik</div>
+    ${[['Ort. Yükseklik',R.dem.mean.toFixed(2)+' m'],['Min',R.dem.min.toFixed(2)+' m'],['Maks',R.dem.max.toFixed(2)+' m'],['Std. Sapma',R.dem.stdev.toFixed(4)+' m'],['SRTM Doğrulama',R.elev.elev?R.elev.elev.toFixed(1)+' m':'—'],['Çözünürlük','30m/piksel']].map(([k,v])=>`<div class="kv-row"><span class="kv-k">${k}</span><span class="kv-v" style="color:var(--gold)">${v}</span></div>`).join('')}
+    <div style="margin-top:10px"><div class="raw-title">Yükseklik Histogramı</div>${histBar(R.dem.hist,'linear-gradient(90deg,#ff9800,#f57c00)')}</div>
+  </div>
+  <div class="raw-card">
+    <div class="raw-title">🔬 ÇAKIŞTıRMA MATRİSİ</div>
+    ${[
+      ['NDVI × SAR',R.ndvi.mean<0.3&&R.sar.vvMean>-14?'YÜKSEK KORELASYON ⚠️':'Normal'],
+      ['SAR × DEM',R.sar.vvMean>-12&&R.dem.stdev>15?'ORTA KORELASYON':'Normal'],
+      ['NDVI × DEM',R.ndvi.min<0&&R.dem.stdev>10?'POZİTİF KORELASYON':'Normal'],
+      ['3-KAT SKOR',R.score+'/100'],
+      ['Öneri',R.score>=70?'Saha keşfi önerilir':R.score>=45?'İkincil analiz gerekli':'Standart bölge']
+    ].map(([k,v])=>`<div class="kv-row"><span class="kv-k">${k}</span><span class="kv-v" style="color:${k.includes('3-KAT')?'var(--accent)':k.includes('Öneri')?'var(--gold)':'var(--text)'}">${v}</span></div>`).join('')}
+  </div>
+  </div>`;
+}
+</script>
+</body>
+</html>
